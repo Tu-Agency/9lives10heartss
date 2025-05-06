@@ -1,0 +1,57 @@
+package lapisteam.kurampa.liveshearts.command.impl;
+
+import lapisteam.kurampa.liveshearts.command.BaseCommand;
+import lapisteam.kurampa.liveshearts.config.Lang;
+import lapisteam.kurampa.liveshearts.util.ColorUtil;
+import org.bukkit.Material;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public final class TotemCommand implements BaseCommand {
+
+    private final JavaPlugin plugin;
+    private final Lang lang;
+
+    public TotemCommand(JavaPlugin plugin) {
+        this.plugin = plugin;
+        this.lang   = new Lang(plugin);
+    }
+
+    @Override
+    public void execute(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("9l.totem")) {
+            sender.sendMessage(lang.msg("no_permission"));  return;
+        }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(lang.msg("command_usage"));  return;
+        }
+        if (!plugin.getConfig().getBoolean("heart-recovery.totem.enabled", true)) {
+            player.sendMessage(lang.msg("totem_disabled")); return;
+        }
+
+        String name = ColorUtil.translateHex(
+                plugin.getConfig().getString("heart-recovery.totem.name", "&dUnique Totem"));
+        int cmd = plugin.getConfig().getInt("heart-recovery.totem.container", 12345);
+
+        ItemStack totem = new ItemStack(Material.TOTEM_OF_UNDYING);
+        ItemMeta meta   = totem.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(name);
+            List<String> lore = new ArrayList<>();
+            plugin.getConfig().getStringList("heart-recovery.totem.lore")
+                    .forEach(s -> lore.add(ColorUtil.translateHex(s)));
+            meta.setLore(lore);
+            meta.setCustomModelData(cmd);
+            totem.setItemMeta(meta);
+        }
+
+        player.getInventory().addItem(totem);
+        player.sendMessage(lang.msg("totem_received", name));
+    }
+}
