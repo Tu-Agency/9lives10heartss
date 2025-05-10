@@ -4,7 +4,6 @@ import lapisteam.kurampa.liveshearts.config.ConfigKeys;
 import lapisteam.kurampa.liveshearts.config.Lang;
 import lapisteam.kurampa.liveshearts.service.HeartService;
 import lapisteam.kurampa.liveshearts.util.ItemUtil;
-import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
