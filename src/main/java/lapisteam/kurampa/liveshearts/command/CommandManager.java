@@ -33,6 +33,7 @@ public class CommandManager implements CommandExecutor {
 
     public void register() {
         plugin.getCommand("9l").setExecutor(this);
+        plugin.getCommand("9l").setTabCompleter(new MainTabCompleter());
     }
 
     @Override
