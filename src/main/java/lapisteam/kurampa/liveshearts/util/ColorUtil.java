@@ -3,7 +3,6 @@ package lapisteam.kurampa.liveshearts.util;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Перевод &#rrggbb + стандартных &цвет в Bukkit §‑коды. */
 public final class ColorUtil {
 
     private ColorUtil() {}

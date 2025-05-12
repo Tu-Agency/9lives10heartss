@@ -1,5 +1,6 @@
 package lapisteam.kurampa.liveshearts.service;
 
+import lapisteam.kurampa.liveshearts.config.Lang;
 import lapisteam.kurampa.liveshearts.storage.PlayerRepository;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -12,10 +13,12 @@ public class HeartService {
 
     private final PlayerRepository repository;
     private final JavaPlugin plugin;
+    private final Lang lang;
 
     public HeartService(PlayerRepository repository, JavaPlugin plugin) {
         this.repository = repository;
         this.plugin     = plugin;
+        this.lang       = new Lang(plugin);
     }
 
     public int getHearts(String playerName) {
@@ -37,21 +40,38 @@ public class HeartService {
     }
 
     public void handleDeath(Player player) {
-        removeHearts(player.getName(), 1);
-        if (getHearts(player.getName()) <= 0) {
+        String name = player.getName();
+        int current = getHearts(name);
+        String mode  = plugin.getConfig().getString("gamemode", "hard");
+
+        if (mode.equalsIgnoreCase("immortal")) {
+            if (current > 1) {
+                repository.saveHearts(name, current - 1);
+                applyHealthAttribute(name, current - 1);
+            }
+            return;
+        }
+
+        if (current > 1) {
+            repository.saveHearts(name, current - 1);
+            applyHealthAttribute(name, current - 1);
+            player.sendMessage(lang.msg("hearts-decreased", "hearts", current - 1));
+        } else {
+            repository.saveHearts(name, 0);
+            player.sendMessage(lang.msg("spectator-mode"));
             player.setGameMode(GameMode.SPECTATOR);
         }
     }
+
 
     private void applyHealthAttribute(String playerName, int hearts) {
         Player player = Bukkit.getPlayerExact(playerName);
         if (player == null) return;
 
-        double maxHp = hearts * 2.0;
-        player.setMaxHealth(maxHp);
-
-        if (player.getHealth() > maxHp) {
-            player.setHealth(maxHp);
+        double hp = hearts * 2.0;
+        player.setMaxHealth(hp);
+        if (player.getHealth() > hp) {
+            player.setHealth(hp);
         }
     }
 }

@@ -26,12 +26,21 @@ public final class Lang {
         lang = YamlConfiguration.loadConfiguration(file);
     }
 
-    public String msg(String key, Object... placeholders) {
-        String raw = lang.getString("messages." + key, "§c<" + key + ">");
-        String colored = ColorUtil.translateHex(raw);
-        for (int i = 0; i < placeholders.length; i++) {
-            colored = colored.replace("{" + i + "}", String.valueOf(placeholders[i]));
+    public String msg(String path, Object... placeholders) {
+        String raw = lang.getString("messages." + path, "§c<" + path + ">");
+        String s = ColorUtil.translateHex(raw);
+
+        if (placeholders.length % 2 == 0) {
+            for (int i = 0; i < placeholders.length; i += 2) {
+                String key = String.valueOf(placeholders[i]);
+                String val = String.valueOf(placeholders[i + 1]);
+                s = s.replace("{" + key + "}", val);
+            }
+        } else {
+            for (int i = 0; i < placeholders.length; i++) {
+                s = s.replace("{" + i + "}", String.valueOf(placeholders[i]));
+            }
         }
-        return colored;
+        return s;
     }
 }

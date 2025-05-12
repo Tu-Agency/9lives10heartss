@@ -48,7 +48,13 @@ public final class ResurrectCommand implements BaseCommand {
         service.setHearts(target.getName(), hearts);
         target.setGameMode(GameMode.SURVIVAL);
 
-        sender.sendMessage(lang.msg("resurrected", target.getName(), hearts));
-        target.sendMessage(lang.msg("you_have_been_resurrected", hearts));
+        sender.sendMessage(lang.msg("resurrected",
+                "player", target.getName(),
+                "hearts", hearts
+        ));
+
+        target.sendMessage(lang.msg("you_have_been_resurrected",
+                "hearts", hearts
+        ));
     }
 }

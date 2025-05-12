@@ -37,6 +37,8 @@ public final class SetCommand implements BaseCommand {
         }
 
         service.setHearts(playerName, hearts);
-        sender.sendMessage(lang.msg("hearts_set", hearts));
+        sender.sendMessage(lang.msg("hearts_set",
+                "hearts", hearts
+        ));
     }
 }

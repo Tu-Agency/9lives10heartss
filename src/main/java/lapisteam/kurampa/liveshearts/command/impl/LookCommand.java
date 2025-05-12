@@ -35,7 +35,9 @@ public final class LookCommand implements BaseCommand {
         if (target != null && target.getGameMode() == GameMode.SPECTATOR) {
             sender.sendMessage(lang.msg("hearts_spectator_mode"));
         } else {
-            sender.sendMessage(lang.msg("hearts_look", hearts));
+            sender.sendMessage(lang.msg("hearts_look",
+                    "hearts", hearts
+            ));
         }
     }
 }

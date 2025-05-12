@@ -15,6 +15,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public final class ItemUtil {
 
@@ -81,33 +82,49 @@ public final class ItemUtil {
         player.sendMessage(lang.msg("heart_recovered_thematic", after));
     }
 
-    public static ItemStack createHeartHead(Player dead, Lang lang, JavaPlugin plugin) {
+    public static ItemStack createHeartHead(Player dead, JavaPlugin plugin) {
         ItemStack head = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta meta = (SkullMeta) head.getItemMeta();
         if (meta == null) return head;
 
-        // имя и лор
-        meta.setDisplayName(lang.msg("head-heart.name", dead.getName()));
-        meta.setLore(List.of(
-                lang.msg("head-heart.lore.0"),
-                lang.msg("head-heart.lore.1")
-        ));
+        String rawName = plugin.getConfig()
+                .getString("head-heart.name", "{player}");
+        String name = ColorUtil.translateHex(
+                rawName.replace("{player}", dead.getName())
+        );
+        meta.setDisplayName(name);
 
-        int cmd = plugin.getConfig().getInt("head-heart.container", 12345);
+        List<String> rawLore = plugin.getConfig()
+                .getStringList("head-heart.lore");
+        List<String> lore = rawLore.stream()
+                .map(line -> ColorUtil.translateHex(
+                        line.replace("{player}", dead.getName())
+                ))
+                .collect(Collectors.toList());
+        meta.setLore(lore);
+
+        int cmd = plugin.getConfig()
+                .getInt("head-heart.container", 12345);
         meta.setCustomModelData(cmd);
 
-        // текстура
-        String value = plugin.getConfig().getString("head-heart.value", "");
+        String value = plugin.getConfig()
+                .getString("head-heart.value", "");
         if (!value.isBlank()) {
             try {
-                GameProfile profile = new GameProfile(UUID.randomUUID(), null);
-                profile.getProperties().put("textures", new Property("textures", value));
+                GameProfile profile = new GameProfile(
+                        UUID.randomUUID(), dead.getName()
+                );
+                profile.getProperties()
+                        .put("textures", new Property("textures", value));
 
-                Field profileField = meta.getClass().getDeclaredField("profile");
+                Field profileField = meta.getClass()
+                        .getDeclaredField("profile");
                 profileField.setAccessible(true);
                 profileField.set(meta, profile);
             } catch (Exception ex) {
-                plugin.getLogger().warning("Не удалось установить текстуру головы: " + ex.getMessage());
+                plugin.getLogger().warning(
+                        "Не удалось установить текстуру головы: " + ex.getMessage()
+                );
             }
         }
 

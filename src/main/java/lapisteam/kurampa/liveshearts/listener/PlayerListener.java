@@ -1,25 +1,26 @@
 package lapisteam.kurampa.liveshearts.listener;
 
+import lapisteam.kurampa.liveshearts.service.HeartService;
 import lapisteam.kurampa.liveshearts.config.ConfigKeys;
 import lapisteam.kurampa.liveshearts.config.Lang;
-import lapisteam.kurampa.liveshearts.service.HeartService;
 import lapisteam.kurampa.liveshearts.util.ItemUtil;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.entity.EntityResurrectEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.event.entity.EntityResurrectEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class PlayerListener implements Listener {
+public class PlayerListener implements Listener {
 
     private final HeartService service;
     private final JavaPlugin plugin;
@@ -27,20 +28,36 @@ public final class PlayerListener implements Listener {
 
     public PlayerListener(HeartService service, JavaPlugin plugin) {
         this.service = service;
-        this.plugin = plugin;
-        this.lang = new Lang(plugin);
+        this.plugin  = plugin;
+        this.lang    = new Lang(plugin);
     }
 
     @EventHandler
     public void onDeath(PlayerDeathEvent e) {
         Player p = e.getEntity();
-
         service.handleDeath(p);
 
-        if (plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART + ".enable", true)) {
-            e.getDrops().add(ItemUtil.createHeartHead(p, lang, plugin));
+        if (plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART + ".enabled", true)) {
+            e.getDrops().add(ItemUtil.createHeartHead(p, plugin));
         }
     }
+
+    @EventHandler
+    public void onRespawn(PlayerRespawnEvent e) {
+        Player p = e.getPlayer();
+        int hearts = service.getHearts(p.getName());
+
+        if (hearts <= 0) {
+            p.setGameMode(GameMode.SPECTATOR);
+            return;
+        }
+
+        double hp = hearts * 2.0;
+        p.setMaxHealth(hp);
+        p.setHealth(hp);
+    }
+
+
 
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {

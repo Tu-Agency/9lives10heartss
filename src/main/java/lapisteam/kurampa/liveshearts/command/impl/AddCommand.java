@@ -51,6 +51,8 @@ public final class AddCommand implements BaseCommand {
         }
 
         service.addHearts(targetName, delta);
-        sender.sendMessage(lang.msg("hearts_set", after));
+        sender.sendMessage(lang.msg("hearts_set",
+                "hearts", delta
+        ));
     }
 }
