@@ -51,17 +51,17 @@ public class HeartService {
             }
             return;
         }
-
         if (current > 1) {
             repository.saveHearts(name, current - 1);
             applyHealthAttribute(name, current - 1);
             player.sendMessage(lang.msg("hearts-decreased", "hearts", current - 1));
         } else {
             repository.saveHearts(name, 0);
-            player.sendMessage(lang.msg("spectator-mode"));
             player.setGameMode(GameMode.SPECTATOR);
+            player.sendMessage(lang.msg("spectator-mode"));
         }
     }
+
 
 
     private void applyHealthAttribute(String playerName, int hearts) {

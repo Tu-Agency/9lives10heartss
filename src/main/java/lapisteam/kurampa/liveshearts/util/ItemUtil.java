@@ -2,20 +2,23 @@ package lapisteam.kurampa.liveshearts.util;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
-import lapisteam.kurampa.liveshearts.config.Lang;
 import lapisteam.kurampa.liveshearts.service.HeartService;
+import lapisteam.kurampa.liveshearts.config.Lang;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
 
 public final class ItemUtil {
 
@@ -65,7 +68,6 @@ public final class ItemUtil {
         String name = plugin.getConfig().getString("heart-recovery.totem.name", "");
         int cmd    = plugin.getConfig().getInt   ("heart-recovery.totem.container", 12345);
 
-        // сравниваем name без цвета и CustomModelData
         if (meta.hasDisplayName() && meta.getDisplayName().equals(name)) return true;
         return meta.hasCustomModelData() && meta.getCustomModelData() == cmd;
     }
@@ -87,50 +89,46 @@ public final class ItemUtil {
         SkullMeta meta = (SkullMeta) head.getItemMeta();
         if (meta == null) return head;
 
-        String rawName = plugin.getConfig()
-                .getString("head-heart.name", "{player}");
-        String name = ColorUtil.translateHex(
-                rawName.replace("{player}", dead.getName())
+        // 1) Имя и лор из config.yml
+        String rawName = plugin.getConfig().getString("head-heart.name", "{player}");
+        meta.setDisplayName(ColorUtil.translateHex(rawName.replace("{player}", dead.getName())));
+
+        List<String> rawLore = plugin.getConfig().getStringList("head-heart.lore");
+        meta.setLore(rawLore.stream()
+                .map(line -> ColorUtil.translateHex(line.replace("{player}", dead.getName())))
+                .toList()
         );
-        meta.setDisplayName(name);
 
-        List<String> rawLore = plugin.getConfig()
-                .getStringList("head-heart.lore");
-        List<String> lore = rawLore.stream()
-                .map(line -> ColorUtil.translateHex(
-                        line.replace("{player}", dead.getName())
-                ))
-                .collect(Collectors.toList());
-        meta.setLore(lore);
+        meta.setCustomModelData(plugin.getConfig().getInt("head-heart.container", 12345));
 
-        int cmd = plugin.getConfig()
-                .getInt("head-heart.container", 12345);
-        meta.setCustomModelData(cmd);
-
-        String value = plugin.getConfig()
-                .getString("head-heart.value", "");
-        if (!value.isBlank()) {
+        // 2) Base64-текстура
+        String value = plugin.getConfig().getString("head-heart.value", "").trim();
+        if (!value.isEmpty()) {
             try {
-                GameProfile profile = new GameProfile(
-                        UUID.randomUUID(), dead.getName()
-                );
-                profile.getProperties()
-                        .put("textures", new Property("textures", value));
+                // создаём GameProfile с нужной текстурой
+                GameProfile gp = new GameProfile(UUID.randomUUID(), dead.getName());
+                gp.getProperties().put("textures", new Property("textures", value));
 
-                Field profileField = meta.getClass()
-                        .getDeclaredField("profile");
+                // получаем класс ResolvableProfile (Paper/NMS)
+                Class<?> rpClass = Class.forName("net.minecraft.world.item.component.ResolvableProfile");
+                // метод of(GameProfile)
+                Method of = rpClass.getMethod("of", GameProfile.class);
+                Object resolvable = of.invoke(null, gp);
+
+                // впихиваем в приватное поле profile у CraftMetaSkull
+                Field profileField = meta.getClass().getDeclaredField("profile");
                 profileField.setAccessible(true);
-                profileField.set(meta, profile);
-            } catch (Exception ex) {
-                plugin.getLogger().warning(
-                        "Не удалось установить текстуру головы: " + ex.getMessage()
-                );
+                profileField.set(meta, resolvable);
+
+            } catch (Throwable ex) {
+                plugin.getLogger().warning("Не удалось установить текстуру головы: " + ex.getMessage());
             }
         }
 
         head.setItemMeta(meta);
         return head;
     }
+
 
     public static ItemStack createTotem(JavaPlugin plugin) {
         ItemStack totem = new ItemStack(Material.TOTEM_OF_UNDYING);
