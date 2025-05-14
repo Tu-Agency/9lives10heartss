@@ -5,9 +5,12 @@ import lapisteam.kurampa.liveshearts.config.Lang;
 import lapisteam.kurampa.liveshearts.service.HeartService;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.UUID;
 
 public final class AddCommand implements BaseCommand {
 
@@ -30,7 +33,14 @@ public final class AddCommand implements BaseCommand {
             return;
         }
 
-        String targetName = args[1];
+        OfflinePlayer op = Bukkit.getOfflinePlayer(args[1]);
+        if (!op.isOnline() && !op.hasPlayedBefore()) {
+            sender.sendMessage(lang.msg("invalid_player"));
+            return;
+        }
+        Player target = op.getPlayer();
+        UUID id = op.getUniqueId();
+
         int delta;
         try {
             delta = Integer.parseInt(args[2]);
@@ -39,30 +49,16 @@ public final class AddCommand implements BaseCommand {
             return;
         }
 
-        Player target = Bukkit.getPlayerExact(targetName);
-        if (target == null || !target.isOnline()) {
-            sender.sendMessage(lang.msg("invalid_player"));
-            return;
-        }
-        if (target.getGameMode() == GameMode.SPECTATOR) {
-            sender.sendMessage(lang.msg("hearts_spectator_mode"));
-            return;
-        }
-
-        int current = service.getHearts(targetName);
+        int current = service.getHearts(id);
         int max     = service.getMaxHearts();
         int after   = current + delta;
 
         if (after > max) {
-            sender.sendMessage(lang.msg("error_invalid_number",
-                    "max", max
-            ));
+            sender.sendMessage(lang.msg("error_invalid_number", "max", max));
             return;
         }
 
-        service.addHearts(targetName, delta);
-        sender.sendMessage(lang.msg("hearts_set",
-                "hearts", after
-        ));
+        service.addHearts(id, delta);
+        sender.sendMessage(lang.msg("hearts_set", "hearts", after));
     }
 }

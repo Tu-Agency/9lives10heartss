@@ -5,9 +5,12 @@ import lapisteam.kurampa.liveshearts.config.Lang;
 import lapisteam.kurampa.liveshearts.service.HeartService;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.UUID;
 
 public final class ResurrectCommand implements BaseCommand {
 
@@ -30,11 +33,12 @@ public final class ResurrectCommand implements BaseCommand {
             return;
         }
 
-        Player target = Bukkit.getPlayerExact(args[1]);
-        if (target == null || !target.isOnline()) {
+        OfflinePlayer op = Bukkit.getOfflinePlayer(args[1]);
+        if (!op.isOnline() || !op.hasPlayedBefore()) {
             sender.sendMessage(lang.msg("invalid_player"));
             return;
         }
+        Player target = op.getPlayer();
         if (target.getGameMode() != GameMode.SPECTATOR) {
             sender.sendMessage(lang.msg("not_in_spectator"));
             return;
@@ -50,21 +54,15 @@ public final class ResurrectCommand implements BaseCommand {
 
         int max = service.getMaxHearts();
         if (hearts < 1 || hearts > max) {
-            sender.sendMessage(lang.msg("invalid_number",
-                    "max", max
-            ));
+            sender.sendMessage(lang.msg("invalid_number", "max", max));
             return;
         }
 
-        service.setHearts(target.getName(), hearts);
+        UUID targetId = target.getUniqueId();
+        service.setHearts(targetId, hearts);
         target.setGameMode(GameMode.SURVIVAL);
 
-        sender.sendMessage(lang.msg("resurrected",
-                "player", target.getName(),
-                "hearts", hearts
-        ));
-        target.sendMessage(lang.msg("you_have_been_resurrected",
-                "hearts", hearts
-        ));
+        sender.sendMessage(lang.msg("resurrected", "player", target.getName(), "hearts", hearts));
+        target.sendMessage(lang.msg("you_have_been_resurrected", "hearts", hearts));
     }
 }

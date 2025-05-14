@@ -7,48 +7,62 @@ import org.sqlite.SQLiteDataSource;
 import java.io.File;
 import java.sql.*;
 import java.util.Optional;
+import java.util.UUID;
 
 public class SQLitePlayerRepository implements PlayerRepository {
 
     private final SQLiteDataSource ds = new SQLiteDataSource();
 
     public SQLitePlayerRepository(JavaPlugin plugin) {
-        File db = new File(plugin.getDataFolder(), "data.db");
-        ds.setUrl("jdbc:sqlite:" + db.getAbsolutePath());
-        try (Connection c = ds.getConnection();
-             Statement st = c.createStatement()) {
-            st.execute("CREATE TABLE IF NOT EXISTS players (name TEXT PRIMARY KEY, hearts INTEGER)");
-        } catch (SQLException e) {
-            plugin.getLogger().severe("Cannot init database");
-            e.printStackTrace();
+        File dbFile = new File(plugin.getDataFolder(), "data.db");
+        ds.setUrl("jdbc:sqlite:" + dbFile.getAbsolutePath());
+        try (Connection conn = ds.getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("""
+                CREATE TABLE IF NOT EXISTS players (
+                  uuid   TEXT PRIMARY KEY,
+                  hearts INTEGER NOT NULL
+                )
+                """);
+        } catch (SQLException ex) {
+            plugin.getLogger().severe("Не удалось инициализировать базу данных: " + ex.getMessage());
+            ex.printStackTrace();
         }
     }
 
     @Override
-    public Optional<Integer> findHearts(String playerName) {
-        String sql = "SELECT hearts FROM players WHERE name = ?";
-        try (Connection c = ds.getConnection();
-             PreparedStatement p = c.prepareStatement(sql)) {
-            p.setString(1, playerName);
-            ResultSet rs = p.executeQuery();
-            return rs.next() ? Optional.of(rs.getInt("hearts")) : Optional.empty();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return Optional.empty();
+    public Optional<Integer> findHearts(UUID playerId) {
+        String sql = "SELECT hearts FROM players WHERE uuid = ?";
+        try (Connection conn = ds.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, playerId.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(rs.getInt("hearts"));
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
+        return Optional.empty();
     }
 
     @Override
-    public void saveHearts(String playerName, int hearts) {
-        String sql = "INSERT INTO players(name, hearts) VALUES(?, ?) ON CONFLICT(name) DO UPDATE SET hearts = ?";
-        try (Connection c = ds.getConnection();
-             PreparedStatement p = c.prepareStatement(sql)) {
-            p.setString(1, playerName);
-            p.setInt(2, hearts);
-            p.setInt(3, hearts);
-            p.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public void saveHearts(UUID playerId, int hearts) {
+        String sql = """
+            INSERT INTO players (uuid, hearts) 
+            VALUES (?, ?)
+            ON CONFLICT(uuid) DO UPDATE SET hearts = excluded.hearts
+            """;
+        try (Connection conn = ds.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, playerId.toString());
+            ps.setInt(2, hearts);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
     }
 }

@@ -1,8 +1,9 @@
 package lapisteam.kurampa.liveshearts.storage;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public interface PlayerRepository {
-    Optional<Integer> findHearts(String playerName);    // empty → первый вход, даём дефолт 10
-    void saveHearts(String playerName, int hearts);
+    Optional<Integer> findHearts(UUID playerId);
+    void saveHearts(UUID playerId, int hearts);
 }

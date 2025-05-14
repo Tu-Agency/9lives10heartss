@@ -5,9 +5,12 @@ import lapisteam.kurampa.liveshearts.config.Lang;
 import lapisteam.kurampa.liveshearts.service.HeartService;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.UUID;
 
 public final class GiftCommand implements BaseCommand {
 
@@ -30,49 +33,40 @@ public final class GiftCommand implements BaseCommand {
             return;
         }
 
-        Player recipient = Bukkit.getPlayerExact(args[1]);
-        if (recipient == null || !recipient.isOnline()) {
+        OfflinePlayer op = Bukkit.getOfflinePlayer(args[1]);
+        if (!op.isOnline() || !op.hasPlayedBefore()) {
             giver.sendMessage(lang.msg("invalid_player"));
             return;
         }
+        Player recipient = op.getPlayer();
         if (giver.equals(recipient)) {
             giver.sendMessage(lang.msg("cannot_gift_self"));
             return;
         }
-        if (giver.getGameMode() == GameMode.SPECTATOR ||
-                recipient.getGameMode() == GameMode.SPECTATOR) {
+        if (giver.getGameMode() == GameMode.SPECTATOR || recipient.getGameMode() == GameMode.SPECTATOR) {
             giver.sendMessage(lang.msg("hearts_spectator_mode"));
             return;
         }
 
-        int giverHearts = service.getHearts(giver.getName());
-        int recHearts   = service.getHearts(recipient.getName());
-        int max         = service.getMaxHearts();
+        UUID giverId     = giver.getUniqueId();
+        UUID recipientId = recipient.getUniqueId();
+        int giverHearts  = service.getHearts(giverId);
+        int recHearts    = service.getHearts(recipientId);
+        int max          = service.getMaxHearts();
 
         if (giverHearts <= 1) {
             giver.sendMessage(lang.msg("hearts_not_enough"));
             return;
         }
         if (recHearts >= max) {
-            giver.sendMessage(lang.msg("recipient_max_hearts",
-                    "max", max
-            ));
+            giver.sendMessage(lang.msg("recipient_max_hearts", "max", max));
             return;
         }
 
-        service.removeHearts(giver.getName(), 1);
-        service.addHearts(recipient.getName(), 1);
+        service.removeHearts(giverId, 1);
+        service.addHearts(recipientId, 1);
 
-        int afterGiver = giverHearts - 1;
-        int afterRec   = recHearts + 1;
-
-        giver.sendMessage(lang.msg("hearts_gifted",
-                "player", recipient.getName(),
-                "hearts", afterGiver
-        ));
-        recipient.sendMessage(lang.msg("hearts_received",
-                "player", giver.getName(),
-                "hearts", afterRec
-        ));
+        giver.sendMessage(lang.msg("hearts_gifted", "player", recipient.getName(), "hearts", giverHearts - 1));
+        recipient.sendMessage(lang.msg("hearts_received", "player", giver.getName(), "hearts", recHearts + 1));
     }
 }

@@ -3,8 +3,12 @@ package lapisteam.kurampa.liveshearts.command.impl;
 import lapisteam.kurampa.liveshearts.command.BaseCommand;
 import lapisteam.kurampa.liveshearts.config.Lang;
 import lapisteam.kurampa.liveshearts.service.HeartService;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.UUID;
 
 public final class SetCommand implements BaseCommand {
 
@@ -27,7 +31,13 @@ public final class SetCommand implements BaseCommand {
             return;
         }
 
-        String playerName = args[1];
+        OfflinePlayer op = Bukkit.getOfflinePlayer(args[1]);
+        UUID targetId = op.getUniqueId();
+        if (!op.hasPlayedBefore() && !op.isOnline()) {
+            sender.sendMessage(lang.msg("invalid_player"));
+            return;
+        }
+
         int hearts;
         try {
             hearts = Integer.parseInt(args[2]);
@@ -38,15 +48,11 @@ public final class SetCommand implements BaseCommand {
 
         int max = service.getMaxHearts();
         if (hearts < 0 || hearts > max) {
-            sender.sendMessage(lang.msg("invalid_number",
-                    "max", max
-            ));
+            sender.sendMessage(lang.msg("invalid_number", "max", max));
             return;
         }
 
-        service.setHearts(playerName, hearts);
-        sender.sendMessage(lang.msg("hearts_set",
-                "hearts", hearts
-        ));
+        service.setHearts(targetId, hearts);
+        sender.sendMessage(lang.msg("hearts_set", "hearts", hearts));
     }
 }

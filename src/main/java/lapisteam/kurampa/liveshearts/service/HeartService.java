@@ -1,3 +1,4 @@
+// HeartService.java
 package lapisteam.kurampa.liveshearts.service;
 
 import lapisteam.kurampa.liveshearts.config.ConfigKeys;
@@ -8,84 +9,81 @@ import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.UUID;
+
 public class HeartService {
 
     private final PlayerRepository repository;
     private final JavaPlugin plugin;
     private final Lang lang;
 
-    private final int defaultHearts;
-    private final int maxHearts;
-
     public HeartService(PlayerRepository repository, JavaPlugin plugin) {
         this.repository = repository;
         this.plugin     = plugin;
         this.lang       = new Lang(plugin);
-
-        this.defaultHearts = plugin.getConfig().getInt(ConfigKeys.HEARTS_DEFAULT, 10);
-        this.maxHearts = plugin.getConfig().getInt(ConfigKeys.HEARTS_MAX, 10);
     }
 
-    public int getHearts(String playerName) {
-        return repository.findHearts(playerName)
-                .orElse(defaultHearts);
-    }
-
-    public void setHearts(String playerName, int hearts) {
-        int h = Math.max(0, Math.min(maxHearts, hearts));
-        repository.saveHearts(playerName, h);
-        applyHealthAttribute(playerName, h);
-    }
-
-    public void addHearts(String playerName, int delta) {
-        setHearts(playerName, getHearts(playerName) + delta);
-    }
-
-    public void removeHearts(String playerName, int delta) {
-        setHearts(playerName, getHearts(playerName) - delta);
-    }
-
-    public int getDefaultHearts() {
-        return defaultHearts;
+    private int getDefaultHearts() {
+        return plugin.getConfig().getInt(ConfigKeys.HEARTS_DEFAULT, 10);
     }
 
     public int getMaxHearts() {
-        return maxHearts;
+        return plugin.getConfig().getInt(ConfigKeys.HEARTS_MAX, 10);
     }
 
-    public void handleDeath(Player player) {
-        String name = player.getName();
-        int current = getHearts(name);
-        String mode  = plugin.getConfig().getString("gamemode", "hard");
+    public int getHearts(UUID playerId) {
+        return repository.findHearts(playerId)
+                .orElse(getDefaultHearts());
+    }
 
-        if (mode.equalsIgnoreCase("immortal")) {
-            if (current > 1) {
-                repository.saveHearts(name, current - 1);
-                applyHealthAttribute(name, current - 1);
-            }
+    public void setHearts(UUID playerId, int hearts) {
+        int h = Math.max(0, Math.min(getMaxHearts(), hearts));
+        repository.saveHearts(playerId, h);
+        applyHealthAttribute(playerId, h);
+    }
+
+    public void addHearts(UUID playerId, int delta) {
+        setHearts(playerId, getHearts(playerId) + delta);
+    }
+
+    public void removeHearts(UUID playerId, int delta) {
+        setHearts(playerId, getHearts(playerId) - delta);
+    }
+
+    /**
+     * Вызывается при смерти игрока: уменьшает сердца, переводит в spectator, если нужно.
+     */
+    public void handleDeath(Player player) {
+        UUID id = player.getUniqueId();
+        int current = getHearts(id);
+
+        String mode = plugin.getConfig().getString(ConfigKeys.GAMEMODE, "hard");
+        boolean immortal = mode.equalsIgnoreCase("immortal");
+
+        if (immortal) {
+            if (current > 1) setHearts(id, current - 1);
             return;
         }
+
+        // HARD
         if (current > 1) {
-            repository.saveHearts(name, current - 1);
-            applyHealthAttribute(name, current - 1);
-            player.sendMessage(lang.msg("hearts-decreased", "hearts", current - 1));
+            setHearts(id, current - 1);
+            player.sendMessage(lang.msg("hearts_decreased", "hearts", current - 1));
         } else {
-            repository.saveHearts(name, 0);
+            setHearts(id, 0);
             player.setGameMode(GameMode.SPECTATOR);
-            player.sendMessage(lang.msg("spectator-mode"));
+            player.sendMessage(lang.msg("spectator_mode"));
         }
     }
 
-
-
-    private void applyHealthAttribute(String playerName, int hearts) {
-        Player player = Bukkit.getPlayerExact(playerName);
+    private void applyHealthAttribute(UUID playerId, int hearts) {
+        Player player = Bukkit.getPlayer(playerId);
         if (player == null) return;
 
-        double hp = hearts * 2.0;
-        player.setMaxHealth(hp);
-        if (player.getHealth() > hp) {
-            player.setHealth(hp);
+        double maxHp = hearts * 2.0;
+        player.setMaxHealth(maxHp);
+        if (player.getHealth() > maxHp) {
+            player.setHealth(maxHp);
         }
     }
 }

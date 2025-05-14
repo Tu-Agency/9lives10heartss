@@ -27,8 +27,7 @@ public final class ItemUtil {
         var meta = item.getItemMeta();
         return meta != null
                 && meta.hasCustomModelData()
-                && meta.getCustomModelData()
-                == plugin.getConfig().getInt("head-heart.container", 12345);
+                && meta.getCustomModelData() == plugin.getConfig().getInt("head-heart.container", 12345);
     }
 
     public static boolean isCursedHead(ItemStack item, JavaPlugin plugin) {
@@ -36,8 +35,7 @@ public final class ItemUtil {
         var meta = item.getItemMeta();
         return meta != null
                 && meta.hasCustomModelData()
-                && meta.getCustomModelData()
-                == plugin.getConfig().getInt("head-heart.cursed.container", 12346);
+                && meta.getCustomModelData() == plugin.getConfig().getInt("head-heart.cursed.container", 12346);
     }
 
     public static ItemStack createHeartHead(Player dead, JavaPlugin plugin) {
@@ -97,19 +95,23 @@ public final class ItemUtil {
                                        ItemStack item,
                                        HeartService service,
                                        Lang lang) {
-        int current = service.getHearts(player.getName());
-        int max     = service.getMaxHearts();
+        UUID id = player.getUniqueId();
+        int current = service.getHearts(id);
+        int max = service.getMaxHearts();
 
         if (current >= max) {
             player.sendMessage(lang.msg("error_max_hearts", "max", max));
             return;
         }
 
-        if (item.getAmount() > 1) item.setAmount(item.getAmount() - 1);
-        else player.getInventory().remove(item);
+        if (item.getAmount() > 1) {
+            item.setAmount(item.getAmount() - 1);
+        } else {
+            player.getInventory().remove(item);
+        }
 
-        service.addHearts(player.getName(), 1);
-        int after = service.getHearts(player.getName());
+        service.addHearts(id, 1);
+        int after = service.getHearts(id);
         player.sendMessage(lang.msg("heart_recovered", "hearts", after));
     }
 
@@ -118,16 +120,16 @@ public final class ItemUtil {
                                         HeartService service,
                                         Lang lang,
                                         JavaPlugin plugin) {
+        UUID id   = player.getUniqueId();
         int amount = plugin.getConfig().getInt("head-heart.cursed.amount-heart", 1);
-
-        if (item.getAmount() > 1) item.setAmount(item.getAmount() - 1);
-        else player.getInventory().remove(item);
-
-        service.removeHearts(player.getName(), amount);
-
+        if (item.getAmount() > 1) {
+            item.setAmount(item.getAmount() - 1);
+        } else {
+            player.getInventory().remove(item);
+        }
+        service.removeHearts(id, amount);
         player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 0));
         player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 5 * 20, 0));
-
         player.sendMessage(lang.msg("cursed_used", "amount", amount));
     }
 
@@ -144,14 +146,16 @@ public final class ItemUtil {
     public static void handleTotem(Player player,
                                    HeartService service,
                                    Lang lang) {
-        int current = service.getHearts(player.getName());
-        int max     = service.getMaxHearts();
+        UUID id = player.getUniqueId();
+        int current = service.getHearts(id);
+        int max = service.getMaxHearts();
+
         if (current >= max) {
             player.sendMessage(lang.msg("error_max_hearts", "max", max));
             return;
         }
-        service.addHearts(player.getName(), 1);
-        int after = service.getHearts(player.getName());
+        service.addHearts(id, 1);
+        int after = service.getHearts(id);
         player.sendMessage(lang.msg("heart_recovered_thematic", "hearts", after));
     }
 

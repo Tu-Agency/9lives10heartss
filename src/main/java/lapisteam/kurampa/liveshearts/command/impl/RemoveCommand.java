@@ -5,9 +5,12 @@ import lapisteam.kurampa.liveshearts.config.Lang;
 import lapisteam.kurampa.liveshearts.service.HeartService;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.UUID;
 
 public final class RemoveCommand implements BaseCommand {
 
@@ -30,7 +33,17 @@ public final class RemoveCommand implements BaseCommand {
             return;
         }
 
-        String targetName = args[1];
+        OfflinePlayer op = Bukkit.getOfflinePlayer(args[1]);
+        if (!op.isOnline() || !op.hasPlayedBefore()) {
+            sender.sendMessage(lang.msg("invalid_player"));
+            return;
+        }
+        Player target = op.getPlayer();
+        if (target.getGameMode() == GameMode.SPECTATOR) {
+            sender.sendMessage(lang.msg("hearts_spectator_mode"));
+            return;
+        }
+
         int delta;
         try {
             delta = Integer.parseInt(args[2]);
@@ -39,30 +52,17 @@ public final class RemoveCommand implements BaseCommand {
             return;
         }
 
-        Player target = Bukkit.getPlayerExact(targetName);
-        if (target == null || !target.isOnline()) {
-            sender.sendMessage(lang.msg("invalid_player"));
-            return;
-        }
-        if (target.getGameMode() == GameMode.SPECTATOR) {
-            sender.sendMessage(lang.msg("hearts_spectator_mode"));
-            return;
-        }
-
-        int current = service.getHearts(targetName);
-        int after   = current - delta;
+        UUID id = target.getUniqueId();
+        int before = service.getHearts(id);
+        int after  = before - delta;
 
         if (after <= 0) {
-            service.setHearts(targetName, 0);
+            service.setHearts(id, 0);
             target.setHealth(0.0);
-            sender.sendMessage(lang.msg("hearts_set",
-                    "hearts", 0
-            ));
+            sender.sendMessage(lang.msg("hearts_set", "hearts", 0));
         } else {
-            service.removeHearts(targetName, delta);
-            sender.sendMessage(lang.msg("hearts_set",
-                    "hearts", after
-            ));
+            service.removeHearts(id, delta);
+            sender.sendMessage(lang.msg("hearts_set", "hearts", after));
         }
     }
 }
