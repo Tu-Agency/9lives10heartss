@@ -6,22 +6,20 @@ import lapisteam.kurampa.liveshearts.service.HeartService;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.UUID;
 
 public final class SetCommand implements BaseCommand {
 
     private final HeartService service;
-    private final Lang lang;
 
-    public SetCommand(HeartService service, JavaPlugin plugin) {
+    public SetCommand(HeartService service) {
         this.service = service;
-        this.lang    = new Lang(plugin);
     }
 
     @Override
     public void execute(CommandSender sender, String[] args) {
+        var lang = Lang.get();
         if (!sender.hasPermission("9l.set")) {
             sender.sendMessage(lang.msg("no_permission"));
             return;
@@ -32,7 +30,7 @@ public final class SetCommand implements BaseCommand {
         }
 
         OfflinePlayer op = Bukkit.getOfflinePlayer(args[1]);
-        UUID targetId = op.getUniqueId();
+        UUID id = op.getUniqueId();
         if (!op.hasPlayedBefore() && !op.isOnline()) {
             sender.sendMessage(lang.msg("invalid_player"));
             return;
@@ -52,7 +50,7 @@ public final class SetCommand implements BaseCommand {
             return;
         }
 
-        service.setHearts(targetId, hearts);
+        service.setHearts(id, hearts);
         sender.sendMessage(lang.msg("hearts_set", "hearts", hearts));
     }
 }

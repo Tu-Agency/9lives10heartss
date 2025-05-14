@@ -8,22 +8,20 @@ import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.UUID;
 
 public final class GiftCommand implements BaseCommand {
 
     private final HeartService service;
-    private final Lang lang;
 
-    public GiftCommand(HeartService service, JavaPlugin plugin) {
+    public GiftCommand(HeartService service) {
         this.service = service;
-        this.lang    = new Lang(plugin);
     }
 
     @Override
     public void execute(CommandSender sender, String[] args) {
+        var lang = Lang.get();
         if (!(sender instanceof Player giver)) {
             sender.sendMessage(lang.msg("gift_usage"));
             return;
@@ -49,9 +47,9 @@ public final class GiftCommand implements BaseCommand {
         }
 
         UUID giverId     = giver.getUniqueId();
-        UUID recipientId = recipient.getUniqueId();
+        UUID recId       = recipient.getUniqueId();
         int giverHearts  = service.getHearts(giverId);
-        int recHearts    = service.getHearts(recipientId);
+        int recHearts    = service.getHearts(recId);
         int max          = service.getMaxHearts();
 
         if (giverHearts <= 1) {
@@ -64,7 +62,7 @@ public final class GiftCommand implements BaseCommand {
         }
 
         service.removeHearts(giverId, 1);
-        service.addHearts(recipientId, 1);
+        service.addHearts(recId, 1);
 
         giver.sendMessage(lang.msg("hearts_gifted", "player", recipient.getName(), "hearts", giverHearts - 1));
         recipient.sendMessage(lang.msg("hearts_received", "player", giver.getName(), "hearts", recHearts + 1));

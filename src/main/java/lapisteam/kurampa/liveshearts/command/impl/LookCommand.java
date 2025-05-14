@@ -8,22 +8,20 @@ import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.UUID;
 
 public final class LookCommand implements BaseCommand {
 
     private final HeartService service;
-    private final Lang lang;
 
-    public LookCommand(HeartService service, JavaPlugin plugin) {
+    public LookCommand(HeartService service) {
         this.service = service;
-        this.lang    = new Lang(plugin);
     }
 
     @Override
     public void execute(CommandSender sender, String[] args) {
+        var lang = Lang.get();
         if (!sender.hasPermission("9l.look")) {
             sender.sendMessage(lang.msg("no_permission"));
             return;

@@ -4,26 +4,22 @@ import lapisteam.kurampa.liveshearts.command.BaseCommand;
 import lapisteam.kurampa.liveshearts.config.Lang;
 import lapisteam.kurampa.liveshearts.service.HeartService;
 import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.UUID;
 
 public final class AddCommand implements BaseCommand {
 
     private final HeartService service;
-    private final Lang lang;
 
-    public AddCommand(HeartService service, JavaPlugin plugin) {
+    public AddCommand(HeartService service) {
         this.service = service;
-        this.lang    = new Lang(plugin);
     }
 
     @Override
     public void execute(CommandSender sender, String[] args) {
+        var lang = Lang.get();
         if (!sender.hasPermission("9l.add")) {
             sender.sendMessage(lang.msg("no_permission"));
             return;
@@ -38,7 +34,6 @@ public final class AddCommand implements BaseCommand {
             sender.sendMessage(lang.msg("invalid_player"));
             return;
         }
-        Player target = op.getPlayer();
         UUID id = op.getUniqueId();
 
         int delta;

@@ -8,13 +8,27 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 
 public final class Lang {
+    private static Lang INSTANCE;
 
     private final JavaPlugin plugin;
     private FileConfiguration lang;
 
-    public Lang(JavaPlugin plugin) {
+    private Lang(JavaPlugin plugin) {
         this.plugin = plugin;
         load();
+    }
+
+    public static void init(JavaPlugin plugin) {
+        if (INSTANCE == null) {
+            INSTANCE = new Lang(plugin);
+        }
+    }
+
+    public static Lang get() {
+        if (INSTANCE == null) {
+            throw new IllegalStateException("Lang not initialized");
+        }
+        return INSTANCE;
     }
 
     public void load() {
@@ -29,12 +43,9 @@ public final class Lang {
     public String msg(String path, Object... placeholders) {
         String raw = lang.getString("messages." + path, "§c<" + path + ">");
         String s = ColorUtil.translateHex(raw);
-
         if (placeholders.length % 2 == 0) {
             for (int i = 0; i < placeholders.length; i += 2) {
-                String key = String.valueOf(placeholders[i]);
-                String val = String.valueOf(placeholders[i + 1]);
-                s = s.replace("{" + key + "}", val);
+                s = s.replace("{" + placeholders[i] + "}", String.valueOf(placeholders[i + 1]));
             }
         } else {
             for (int i = 0; i < placeholders.length; i++) {

@@ -13,19 +13,18 @@ import java.util.function.Supplier;
 public class CommandManager implements CommandExecutor {
 
     private final Map<String, Supplier<BaseCommand>> registry;
-
     private final Main plugin;
 
     public CommandManager(Main plugin, HeartService heartService) {
         this.plugin = plugin;
 
         registry = Map.of(
-                "add", () -> new AddCommand(heartService, plugin),
-                "remove", () -> new RemoveCommand(heartService, plugin),
-                "set", () -> new SetCommand(heartService, plugin),
-                "look", () -> new LookCommand(heartService, plugin),
-                "gift", () -> new GiftCommand(heartService, plugin),
-                "resurrect", () -> new ResurrectCommand(heartService, plugin),
+                "add", () -> new AddCommand(heartService),
+                "remove", () -> new RemoveCommand(heartService),
+                "set", () -> new SetCommand(heartService),
+                "look", () -> new LookCommand(heartService),
+                "gift", () -> new GiftCommand(heartService),
+                "resurrect", () -> new ResurrectCommand(heartService),
                 "totem", () -> new TotemCommand(plugin),
                 "reload", () -> new ReloadCommand(plugin)
         );
@@ -39,7 +38,7 @@ public class CommandManager implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage("§c/9l <sub‑command>");
+            sender.sendMessage("§c/9l <sub-command>");
             return false;
         }
         Supplier<BaseCommand> supplier = registry.get(args[0].toLowerCase());

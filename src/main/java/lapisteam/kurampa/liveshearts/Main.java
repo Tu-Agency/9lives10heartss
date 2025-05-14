@@ -1,6 +1,7 @@
 package lapisteam.kurampa.liveshearts;
 
 import lapisteam.kurampa.liveshearts.command.CommandManager;
+import lapisteam.kurampa.liveshearts.config.Lang;
 import lapisteam.kurampa.liveshearts.listener.PlayerListener;
 import lapisteam.kurampa.liveshearts.service.HeartService;
 import lapisteam.kurampa.liveshearts.storage.sqlite.SQLitePlayerRepository;
@@ -13,10 +14,12 @@ public final class Main extends JavaPlugin {
     @Override
     public void onEnable() {
 
+        Lang.init(this);
+
         saveDefaultConfig();
         saveResource("lang.yml", false);
 
-        SQLitePlayerRepository repository = new SQLitePlayerRepository(this);
+        var repository = new SQLitePlayerRepository(this);
         heartService = new HeartService(repository, this);
 
         getServer().getPluginManager()

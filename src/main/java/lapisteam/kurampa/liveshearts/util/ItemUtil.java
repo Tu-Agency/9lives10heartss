@@ -44,7 +44,7 @@ public final class ItemUtil {
                 ConfigKeys.HEAD_HEART_LORE,
                 ConfigKeys.HEAD_HEART_CONTAINER,
                 ConfigKeys.HEAD_HEART_VALUE,
-                ConfigKeys.HEAD_HEART_DROP_CHANCE,  // not used here but kept for symmetry
+                ConfigKeys.HEAD_HEART_DROP_CHANCE,
                 1);
     }
 

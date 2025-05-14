@@ -8,22 +8,20 @@ import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.UUID;
 
 public final class ResurrectCommand implements BaseCommand {
 
     private final HeartService service;
-    private final Lang lang;
 
-    public ResurrectCommand(HeartService service, JavaPlugin plugin) {
+    public ResurrectCommand(HeartService service) {
         this.service = service;
-        this.lang    = new Lang(plugin);
     }
 
     @Override
     public void execute(CommandSender sender, String[] args) {
+        var lang = Lang.get();
         if (!sender.hasPermission("9l.resurrect")) {
             sender.sendMessage(lang.msg("no_permission"));
             return;
@@ -58,8 +56,8 @@ public final class ResurrectCommand implements BaseCommand {
             return;
         }
 
-        UUID targetId = target.getUniqueId();
-        service.setHearts(targetId, hearts);
+        UUID id = target.getUniqueId();
+        service.setHearts(id, hearts);
         target.setGameMode(GameMode.SURVIVAL);
 
         sender.sendMessage(lang.msg("resurrected", "player", target.getName(), "hearts", hearts));

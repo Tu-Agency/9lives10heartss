@@ -8,20 +8,20 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class ReloadCommand implements BaseCommand {
 
     private final JavaPlugin plugin;
-    private final Lang lang;
 
     public ReloadCommand(JavaPlugin plugin) {
         this.plugin = plugin;
-        this.lang   = new Lang(plugin);
     }
 
     @Override
     public void execute(CommandSender sender, String[] args) {
+        var lang = Lang.get();
         if (!sender.hasPermission("9l.reload")) {
-            sender.sendMessage(lang.msg("no_permission")); return;
+            sender.sendMessage(lang.msg("no_permission"));
+            return;
         }
         plugin.reloadConfig();
-        lang.load();
+        Lang.get().load();
         sender.sendMessage(lang.msg("config_reloaded"));
     }
 }
