@@ -26,3 +26,4 @@ messages:
   you_have_been_resurrected: "&aВас воскресили — у вас {hearts} сердечек."
   config_reloaded: "&aКонфиг перезагружен."
   config_hearts_updated: "&aПараметр '{0}' изменён на {1}."
+  cursed_used: "&cВы использовали проклятую голову и потеряли {amount} сердечко!"

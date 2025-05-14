@@ -25,10 +25,6 @@ public final class Main extends JavaPlugin {
         new CommandManager(this, heartService).register();
     }
 
-    public HeartService getHeartService() {
-        return heartService;
-    }
-
 @Override
     public void onDisable() {
         // Plugin shutdown logic

@@ -33,16 +33,6 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
-    public void onDeath(PlayerDeathEvent e) {
-        Player p = e.getEntity();
-        service.handleDeath(p);
-
-        if (plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART + ".enabled", true)) {
-            e.getDrops().add(ItemUtil.createHeartHead(p, plugin));
-        }
-    }
-
-    @EventHandler
     public void onRespawn(PlayerRespawnEvent e) {
         Player p = e.getPlayer();
         int hearts = service.getHearts(p.getName());
@@ -62,13 +52,9 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
-        // получаем кол-во сердец (1 сердце = 2 hp)
         int hearts = service.getHearts(p.getName());
         double healthPoints = hearts * 2.0;
-
-        // выставляем максимальное здоровье
         p.setMaxHealth(healthPoints);
-        // и обновляем текущее здоровье на полное
         p.setHealth(healthPoints);
     }
 
@@ -102,14 +88,57 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent e) {
+        Player dead   = e.getEntity();
+        Player killer = dead.getKiller();
+        service.handleDeath(dead);
+
+        if (!plugin.getConfig().getBoolean("head-heart.enabled", true)) return;
+
+        boolean onlyPvP = plugin.getConfig().getBoolean("head-heart.only-player-kill", true);
+        if (onlyPvP && killer == null) return;
+
+        double dropChance    = plugin.getConfig().getDouble("head-heart.drop-chance", 1.0);
+        boolean cursedEnabled= plugin.getConfig().getBoolean("head-heart.cursed.enabled", false);
+        double cursedChance  = plugin.getConfig().getDouble("head-heart.cursed.chance", 0.0);
+
+        double roll = Math.random();
+        if (cursedEnabled && roll < cursedChance) {
+            e.getDrops().add(ItemUtil.createCursedHead(dead, plugin));
+        } else if (roll < dropChance) {
+            e.getDrops().add(ItemUtil.createHeartHead(dead, plugin));
+        }
+    }
+
+    @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         if (e.getHand() != EquipmentSlot.HAND) return;
-        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getAction() != Action.RIGHT_CLICK_AIR
+                && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 
-        ItemStack item = e.getPlayer().getInventory().getItemInMainHand();
-        if (ItemUtil.isUniqueHead(item, plugin)) {
-            ItemUtil.handleHeartHead(e.getPlayer(), item, service, lang);
+        Player player = e.getPlayer();
+        ItemStack item = player.getInventory().getItemInMainHand();
+
+        if (ItemUtil.isHeartHead(item, plugin)) {
+            ItemUtil.handleHeartHead(player, item, service, lang);
+            e.setCancelled(true);
+            return;
+        }
+
+        if (ItemUtil.isCursedHead(item, plugin)) {
+            ItemUtil.handleCursedHead(player, item, service, lang, plugin);
             e.setCancelled(true);
         }
     }
+
+
+    private boolean isCursedHead(ItemStack item, JavaPlugin plugin) {
+        if (item == null || item.getType() != Material.PLAYER_HEAD) return false;
+        var meta = item.getItemMeta();
+        return meta != null
+                && meta.hasCustomModelData()
+                && meta.getCustomModelData() ==
+                plugin.getConfig().getInt("head-heart.cursed.container");
+    }
+
 }

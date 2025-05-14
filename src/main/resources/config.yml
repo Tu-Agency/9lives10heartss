@@ -41,9 +41,24 @@ heart-recovery:
 # ─────────────────────────────────────────────────────────────
 head-heart:
   enabled: true                  # Включить механику выпадения голов игроков
-  value: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZWI3NmI0ZWU5ODg1NzIyOTdjYmQ4NzQ2ODNiZWU5NmFlM2M1NWNlOTRjMDA0ZTUxYWRjODJjZWUxNmNkMGIwYyJ9fX0="
-  container: 12345                # CustomModelData для уникальных текстур
+  only-player-kill: true   # только при убийстве игроком
+  drop-chance: 1.00        # шанс дропа головы в общем
   name: "&#55FA33Выпавшее сердце игрока {player}"
   lore:
     - "&#55FA33Нажми ПКМ с этим предметом в руках"
     - "&#55FA33чтобы восстановить одно сердце"
+  value: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZWI3NmI0ZWU5ODg1NzIyOTdjYmQ4NzQ2ODNiZWU5NmFlM2M1NWNlOTRjMDA0ZTUxYWRjODJjZWUxNmNkMGIwYyJ9fX0="
+  container: 12345                # CustomModelData для уникальных текстур
+
+  # ─────────────────────────────────────────────────────────────
+  # Механика выпадения "проклятой головы" - можно сделать одинаковые lore для пущего эффекта
+  # ─────────────────────────────────────────────────────────────
+  cursed:
+    enabled: true
+    chance: 0.05           # шанс вместо обычной получить «проклятую голову»
+    amount-heart: 1        # сколько сердец отбирает при использовании
+    name: "&#551111Проклятая голова {player}"
+    lore:
+      - "&#551111Нажми ПКМ — потеряешь {amount} сердце"
+    value: "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZWI3NmI0ZWU5ODg1NzIyOTdjYmQ4NzQ2ODNiZWU5NmFlM2M1NWNlOTRjMDA0ZTUxYWRjODJjZWUxNmNkMGIwYyJ9fX0="
+    container: 12346
