@@ -1,6 +1,7 @@
 package lapisteam.kurampa.liveshearts.command.impl;
 
 import lapisteam.kurampa.liveshearts.command.BaseCommand;
+import lapisteam.kurampa.liveshearts.config.ConfigKeys;
 import lapisteam.kurampa.liveshearts.config.Lang;
 import lapisteam.kurampa.liveshearts.util.ColorUtil;
 import org.bukkit.Material;
@@ -31,19 +32,21 @@ public final class TotemCommand implements BaseCommand {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(lang.msg("command_usage"));  return;
         }
-        if (!plugin.getConfig().getBoolean("heart-recovery.totem.enabled", true)) {
-            player.sendMessage(lang.msg("totem_disabled")); return;
+        if (!plugin.getConfig().getBoolean(ConfigKeys.TOTEM_ENABLED, true)) {
+            player.sendMessage(lang.msg("totem_disabled"));
+            return;
         }
 
         String name = ColorUtil.translateHex(
-                plugin.getConfig().getString("heart-recovery.totem.name", "&dUnique Totem"));
-        int cmd = plugin.getConfig().getInt("heart-recovery.totem.container", 12345);
+                plugin.getConfig().getString(ConfigKeys.TOTEM_NAME, "Unique Totem"));
+        int cmd = plugin.getConfig().getInt(ConfigKeys.TOTEM_CONTAINER, 12345);
 
         ItemStack totem = new ItemStack(Material.TOTEM_OF_UNDYING);
         ItemMeta meta   = totem.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(name);
-            List<String> lore = new ArrayList<>();
+            List<String> lore = plugin.getConfig().getStringList(ConfigKeys.TOTEM_LORE)
+                    .stream().map(ColorUtil::translateHex).toList();
             plugin.getConfig().getStringList("heart-recovery.totem.lore")
                     .forEach(s -> lore.add(ColorUtil.translateHex(s)));
             meta.setLore(lore);

@@ -2,8 +2,9 @@ package lapisteam.kurampa.liveshearts.util;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
-import lapisteam.kurampa.liveshearts.config.Lang;
+import lapisteam.kurampa.liveshearts.config.ConfigKeys;
 import lapisteam.kurampa.liveshearts.service.HeartService;
+import lapisteam.kurampa.liveshearts.config.Lang;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -27,7 +28,7 @@ public final class ItemUtil {
         var meta = item.getItemMeta();
         return meta != null
                 && meta.hasCustomModelData()
-                && meta.getCustomModelData() == plugin.getConfig().getInt("head-heart.container", 12345);
+                && meta.getCustomModelData() == plugin.getConfig().getInt(ConfigKeys.HEAD_HEART_CONTAINER);
     }
 
     public static boolean isCursedHead(ItemStack item, JavaPlugin plugin) {
@@ -35,32 +36,45 @@ public final class ItemUtil {
         var meta = item.getItemMeta();
         return meta != null
                 && meta.hasCustomModelData()
-                && meta.getCustomModelData() == plugin.getConfig().getInt("head-heart.cursed.container", 12346);
+                && meta.getCustomModelData() == plugin.getConfig().getInt(ConfigKeys.HEAD_HEART_CURSED_CONTAINER);
     }
 
     public static ItemStack createHeartHead(Player dead, JavaPlugin plugin) {
-        return createHead(dead, plugin, "head-heart");
+        return createHead(dead, plugin, ConfigKeys.HEAD_HEART_NAME,
+                ConfigKeys.HEAD_HEART_LORE,
+                ConfigKeys.HEAD_HEART_CONTAINER,
+                ConfigKeys.HEAD_HEART_VALUE,
+                ConfigKeys.HEAD_HEART_DROP_CHANCE,  // not used here but kept for symmetry
+                1);
     }
 
     public static ItemStack createCursedHead(Player dead, JavaPlugin plugin) {
-        return createHead(dead, plugin, "head-heart.cursed");
+        return createHead(dead, plugin, ConfigKeys.HEAD_HEART_CURSED_NAME,
+                ConfigKeys.HEAD_HEART_CURSED_LORE,
+                ConfigKeys.HEAD_HEART_CURSED_CONTAINER,
+                ConfigKeys.HEAD_HEART_VALUE,
+                ConfigKeys.HEAD_HEART_CURSED_CHANCE,
+                plugin.getConfig().getInt(ConfigKeys.HEAD_HEART_CURSED_AMOUNT, 1));
     }
 
     private static ItemStack createHead(Player dead,
                                         JavaPlugin plugin,
-                                        String path) {
+                                        String nameKey,
+                                        String loreKey,
+                                        String containerKey,
+                                        String valueKey,
+                                        String chanceKey,
+                                        int amount) {
         ItemStack head = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta meta = (SkullMeta) head.getItemMeta();
         if (meta == null) return head;
 
-        String rawName = plugin.getConfig().getString(path + ".name", "{player}");
-        int amount    = plugin.getConfig().getInt(path + ".amount-heart", 1);
-        String display = rawName
-                .replace("{player}", dead.getName())
+        String rawName = plugin.getConfig().getString(nameKey, "{player}");
+        String display = rawName.replace("{player}", dead.getName())
                 .replace("{amount}", String.valueOf(amount));
         meta.setDisplayName(ColorUtil.translateHex(display));
 
-        List<String> rawLore = plugin.getConfig().getStringList(path + ".lore");
+        List<String> rawLore = plugin.getConfig().getStringList(loreKey);
         meta.setLore(rawLore.stream()
                 .map(line -> ColorUtil.translateHex(
                         line.replace("{player}", dead.getName())
@@ -69,10 +83,10 @@ public final class ItemUtil {
                 .toList()
         );
 
-        int cmd = plugin.getConfig().getInt(path + ".container", 12345);
+        int cmd = plugin.getConfig().getInt(containerKey, 12345);
         meta.setCustomModelData(cmd);
 
-        String value = plugin.getConfig().getString(path + ".value", "").trim();
+        String value = plugin.getConfig().getString(valueKey, "").trim();
         if (!value.isEmpty()) {
             try {
                 Object server = Bukkit.getServer();
@@ -95,24 +109,20 @@ public final class ItemUtil {
                                        ItemStack item,
                                        HeartService service,
                                        Lang lang) {
-        UUID id = player.getUniqueId();
+        UUID id     = player.getUniqueId();
         int current = service.getHearts(id);
-        int max = service.getMaxHearts();
+        int max     = service.getMaxHearts();
 
         if (current >= max) {
             player.sendMessage(lang.msg("error_max_hearts", "max", max));
             return;
         }
 
-        if (item.getAmount() > 1) {
-            item.setAmount(item.getAmount() - 1);
-        } else {
-            player.getInventory().remove(item);
-        }
+        if (item.getAmount() > 1) item.setAmount(item.getAmount() - 1);
+        else player.getInventory().remove(item);
 
         service.addHearts(id, 1);
-        int after = service.getHearts(id);
-        player.sendMessage(lang.msg("heart_recovered", "hearts", after));
+        player.sendMessage(lang.msg("heart_recovered", "hearts", service.getHearts(id)));
     }
 
     public static void handleCursedHead(Player player,
@@ -120,13 +130,12 @@ public final class ItemUtil {
                                         HeartService service,
                                         Lang lang,
                                         JavaPlugin plugin) {
-        UUID id   = player.getUniqueId();
-        int amount = plugin.getConfig().getInt("head-heart.cursed.amount-heart", 1);
-        if (item.getAmount() > 1) {
-            item.setAmount(item.getAmount() - 1);
-        } else {
-            player.getInventory().remove(item);
-        }
+        UUID id      = player.getUniqueId();
+        int amount   = plugin.getConfig().getInt(ConfigKeys.HEAD_HEART_CURSED_AMOUNT, 1);
+
+        if (item.getAmount() > 1) item.setAmount(item.getAmount() - 1);
+        else player.getInventory().remove(item);
+
         service.removeHearts(id, amount);
         player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 0));
         player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 5 * 20, 0));
@@ -137,8 +146,10 @@ public final class ItemUtil {
         if (item == null || item.getType() != Material.TOTEM_OF_UNDYING) return false;
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return false;
-        String name = plugin.getConfig().getString("heart-recovery.totem.name", "");
-        int cmd     = plugin.getConfig().getInt("heart-recovery.totem.container", 12345);
+
+        String name = plugin.getConfig().getString(ConfigKeys.TOTEM_NAME, "");
+        int cmd     = plugin.getConfig().getInt(ConfigKeys.TOTEM_CONTAINER, 12345);
+
         if (meta.hasDisplayName() && meta.getDisplayName().equals(name)) return true;
         return meta.hasCustomModelData() && meta.getCustomModelData() == cmd;
     }
@@ -146,27 +157,27 @@ public final class ItemUtil {
     public static void handleTotem(Player player,
                                    HeartService service,
                                    Lang lang) {
-        UUID id = player.getUniqueId();
+        UUID id     = player.getUniqueId();
         int current = service.getHearts(id);
-        int max = service.getMaxHearts();
+        int max     = service.getMaxHearts();
 
         if (current >= max) {
             player.sendMessage(lang.msg("error_max_hearts", "max", max));
             return;
         }
+
         service.addHearts(id, 1);
-        int after = service.getHearts(id);
-        player.sendMessage(lang.msg("heart_recovered_thematic", "hearts", after));
+        player.sendMessage(lang.msg("heart_recovered_thematic", "hearts", service.getHearts(id)));
     }
 
     public static ItemStack createTotem(JavaPlugin plugin) {
         ItemStack totem = new ItemStack(Material.TOTEM_OF_UNDYING);
-        ItemMeta meta = totem.getItemMeta();
+        ItemMeta meta   = totem.getItemMeta();
         if (meta != null) {
-            String name = plugin.getConfig().getString("heart-recovery.totem.name", "");
-            int cmd     = plugin.getConfig().getInt("heart-recovery.totem.container", 12345);
+            String name = plugin.getConfig().getString(ConfigKeys.TOTEM_NAME, "");
+            int cmd     = plugin.getConfig().getInt(ConfigKeys.TOTEM_CONTAINER, 12345);
             meta.setDisplayName(name);
-            meta.setLore(plugin.getConfig().getStringList("heart-recovery.totem.lore"));
+            meta.setLore(plugin.getConfig().getStringList(ConfigKeys.TOTEM_LORE));
             meta.setCustomModelData(cmd);
             totem.setItemMeta(meta);
         }

@@ -50,9 +50,6 @@ public class HeartService {
         setHearts(playerId, getHearts(playerId) - delta);
     }
 
-    /**
-     * Вызывается при смерти игрока: уменьшает сердца, переводит в spectator, если нужно.
-     */
     public void handleDeath(Player player) {
         UUID id = player.getUniqueId();
         int current = getHearts(id);
@@ -65,7 +62,6 @@ public class HeartService {
             return;
         }
 
-        // HARD
         if (current > 1) {
             setHearts(id, current - 1);
             player.sendMessage(lang.msg("hearts_decreased", "hearts", current - 1));

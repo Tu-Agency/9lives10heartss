@@ -54,10 +54,10 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onEat(PlayerItemConsumeEvent e) {
-        if (!plugin.getConfig().getBoolean(ConfigKeys.RECOVERY_EAT + ".enabled", true)) return;
-
+        if (!plugin.getConfig().getBoolean(ConfigKeys.RECOVERY_EAT_ENABLED, true)) return;
         Material food = Material.matchMaterial(
-                plugin.getConfig().getString(ConfigKeys.RECOVERY_EAT + ".food", "ENCHANTED_GOLDEN_APPLE"));
+                plugin.getConfig().getString(ConfigKeys.RECOVERY_EAT_FOOD, "ENCHANTED_GOLDEN_APPLE")
+        );
         if (food == null || e.getItem().getType() != food) return;
 
         Player p = e.getPlayer();
@@ -73,7 +73,7 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onResurrect(EntityResurrectEvent e) {
         if (!(e.getEntity() instanceof Player player)) return;
-        if (!plugin.getConfig().getBoolean(ConfigKeys.RECOVERY_TOTEM + ".enabled", true)) return;
+        if (!plugin.getConfig().getBoolean(ConfigKeys.TOTEM_ENABLED, true)) return;
 
         if (ItemUtil.isUniqueTotem(player.getInventory().getItemInMainHand(), plugin)
                 || ItemUtil.isUniqueTotem(player.getInventory().getItemInOffHand(), plugin)) {
@@ -87,16 +87,17 @@ public class PlayerListener implements Listener {
         Player killer = dead.getKiller();
         service.handleDeath(dead);
 
-        if (!plugin.getConfig().getBoolean("head-heart.enabled", true)) return;
-        boolean onlyPvP = plugin.getConfig().getBoolean("head-heart.only-player-kill", true);
+        if (!plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART_ENABLED, true)) return;
+
+        boolean onlyPvP = plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART_ONLY_PVP, true);
         if (onlyPvP && killer == null) return;
 
-        double dropChance = plugin.getConfig().getDouble("head-heart.drop-chance", 1.0);
-        boolean cursedEnabled = plugin.getConfig().getBoolean("head-heart.cursed.enabled", false);
-        double cursedChance = plugin.getConfig().getDouble("head-heart.cursed.chance", 0.0);
+        double dropChance = plugin.getConfig().getDouble(ConfigKeys.HEAD_HEART_DROP_CHANCE, 1.0);
+        boolean cursedEn = plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART_CURSED_ENABLED, false);
+        double cursedChance = plugin.getConfig().getDouble(ConfigKeys.HEAD_HEART_CURSED_CHANCE, 0.0);
 
         double roll = Math.random();
-        if (cursedEnabled && roll < cursedChance) {
+        if (cursedEn && roll < cursedChance) {
             e.getDrops().add(ItemUtil.createCursedHead(dead, plugin));
         } else if (roll < dropChance) {
             e.getDrops().add(ItemUtil.createHeartHead(dead, plugin));
