@@ -7,6 +7,7 @@ messages:
   hearts_set: "&#55FF55Количество сердечек установлено на {hearts}."
   hearts_gifted: "&#55FF55Вы передали 1 сердечко игроку {player}."
   hearts_received: "&#55FF55Вы получили 1 сердечко от игрока {player}."
+  hearts_decreased: "&#55FF55Вы потеряли голову-сердечко."
   hearts_not_enough: "&#FF5555У вас недостаточно сердечек для передачи."
   gift_usage: "&#FF5555Эту команду могут использовать только игроки."
   hearts_look: "&#55FF55У игрока &#55FFFF{hearts}&#55FF55 сердечек."

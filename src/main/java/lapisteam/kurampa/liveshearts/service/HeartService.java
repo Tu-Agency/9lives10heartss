@@ -1,5 +1,6 @@
 package lapisteam.kurampa.liveshearts.service;
 
+import lapisteam.kurampa.liveshearts.config.ConfigKeys;
 import lapisteam.kurampa.liveshearts.config.Lang;
 import lapisteam.kurampa.liveshearts.storage.PlayerRepository;
 import org.bukkit.Bukkit;
@@ -9,24 +10,29 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class HeartService {
 
-    public static final int MAX_HEARTS = 10;
-
     private final PlayerRepository repository;
     private final JavaPlugin plugin;
     private final Lang lang;
+
+    private final int defaultHearts;
+    private final int maxHearts;
 
     public HeartService(PlayerRepository repository, JavaPlugin plugin) {
         this.repository = repository;
         this.plugin     = plugin;
         this.lang       = new Lang(plugin);
+
+        this.defaultHearts = plugin.getConfig().getInt(ConfigKeys.HEARTS_DEFAULT, 10);
+        this.maxHearts = plugin.getConfig().getInt(ConfigKeys.HEARTS_MAX, 10);
     }
 
     public int getHearts(String playerName) {
-        return repository.findHearts(playerName).orElse(MAX_HEARTS);
+        return repository.findHearts(playerName)
+                .orElse(defaultHearts);
     }
 
     public void setHearts(String playerName, int hearts) {
-        int h = Math.max(1, Math.min(MAX_HEARTS, hearts));
+        int h = Math.max(0, Math.min(maxHearts, hearts));
         repository.saveHearts(playerName, h);
         applyHealthAttribute(playerName, h);
     }
@@ -37,6 +43,14 @@ public class HeartService {
 
     public void removeHearts(String playerName, int delta) {
         setHearts(playerName, getHearts(playerName) - delta);
+    }
+
+    public int getDefaultHearts() {
+        return defaultHearts;
+    }
+
+    public int getMaxHearts() {
+        return maxHearts;
     }
 
     public void handleDeath(Player player) {

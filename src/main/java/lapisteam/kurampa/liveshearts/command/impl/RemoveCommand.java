@@ -22,37 +22,47 @@ public final class RemoveCommand implements BaseCommand {
     @Override
     public void execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("9l.remove")) {
-            sender.sendMessage(lang.msg("no_permission"));  return;
+            sender.sendMessage(lang.msg("no_permission"));
+            return;
         }
         if (args.length != 3) {
-            sender.sendMessage(lang.msg("command_usage"));  return;
+            sender.sendMessage(lang.msg("command_usage"));
+            return;
         }
 
         String targetName = args[1];
         int delta;
-        try { delta = Integer.parseInt(args[2]); }
-        catch (NumberFormatException e) {
-            sender.sendMessage(lang.msg("invalid_number")); return;
+        try {
+            delta = Integer.parseInt(args[2]);
+        } catch (NumberFormatException e) {
+            sender.sendMessage(lang.msg("invalid_number"));
+            return;
         }
 
         Player target = Bukkit.getPlayerExact(targetName);
         if (target == null || !target.isOnline()) {
-            sender.sendMessage(lang.msg("invalid_player")); return;
+            sender.sendMessage(lang.msg("invalid_player"));
+            return;
         }
         if (target.getGameMode() == GameMode.SPECTATOR) {
-            sender.sendMessage(lang.msg("hearts_spectator_mode")); return;
+            sender.sendMessage(lang.msg("hearts_spectator_mode"));
+            return;
         }
 
-        int before = service.getHearts(targetName);
-        int after  = before - delta;
+        int current = service.getHearts(targetName);
+        int after   = current - delta;
 
         if (after <= 0) {
             service.setHearts(targetName, 0);
             target.setHealth(0.0);
-            sender.sendMessage(lang.msg("hearts_set", 0));
+            sender.sendMessage(lang.msg("hearts_set",
+                    "hearts", 0
+            ));
         } else {
             service.removeHearts(targetName, delta);
-            sender.sendMessage(lang.msg("hearts_set", after));
+            sender.sendMessage(lang.msg("hearts_set",
+                    "hearts", after
+            ));
         }
     }
 }

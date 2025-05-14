@@ -22,38 +22,57 @@ public final class GiftCommand implements BaseCommand {
     @Override
     public void execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player giver)) {
-            sender.sendMessage(lang.msg("gift_usage"));     return;
+            sender.sendMessage(lang.msg("gift_usage"));
+            return;
         }
         if (args.length != 2) {
-            giver.sendMessage(lang.msg("command_usage"));   return;
+            giver.sendMessage(lang.msg("command_usage"));
+            return;
         }
 
         Player recipient = Bukkit.getPlayerExact(args[1]);
         if (recipient == null || !recipient.isOnline()) {
-            giver.sendMessage(lang.msg("invalid_player"));  return;
+            giver.sendMessage(lang.msg("invalid_player"));
+            return;
         }
         if (giver.equals(recipient)) {
-            giver.sendMessage(lang.msg("cannot_gift_self")); return;
+            giver.sendMessage(lang.msg("cannot_gift_self"));
+            return;
         }
         if (giver.getGameMode() == GameMode.SPECTATOR ||
                 recipient.getGameMode() == GameMode.SPECTATOR) {
-            giver.sendMessage(lang.msg("hearts_spectator_mode")); return;
+            giver.sendMessage(lang.msg("hearts_spectator_mode"));
+            return;
         }
 
         int giverHearts = service.getHearts(giver.getName());
         int recHearts   = service.getHearts(recipient.getName());
+        int max         = service.getMaxHearts();
 
         if (giverHearts <= 1) {
-            giver.sendMessage(lang.msg("hearts_not_enough")); return;
+            giver.sendMessage(lang.msg("hearts_not_enough"));
+            return;
         }
-        if (recHearts >= HeartService.MAX_HEARTS) {
-            giver.sendMessage(lang.msg("recipient_max_hearts")); return;
+        if (recHearts >= max) {
+            giver.sendMessage(lang.msg("recipient_max_hearts",
+                    "max", max
+            ));
+            return;
         }
 
         service.removeHearts(giver.getName(), 1);
         service.addHearts(recipient.getName(), 1);
 
-        giver.sendMessage(lang.msg("hearts_gifted", recipient.getName()));
-        recipient.sendMessage(lang.msg("hearts_received", giver.getName()));
+        int afterGiver = giverHearts - 1;
+        int afterRec   = recHearts + 1;
+
+        giver.sendMessage(lang.msg("hearts_gifted",
+                "player", recipient.getName(),
+                "hearts", afterGiver
+        ));
+        recipient.sendMessage(lang.msg("hearts_received",
+                "player", giver.getName(),
+                "hearts", afterRec
+        ));
     }
 }

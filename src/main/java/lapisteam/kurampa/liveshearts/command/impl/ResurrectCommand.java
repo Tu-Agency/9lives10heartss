@@ -22,27 +22,38 @@ public final class ResurrectCommand implements BaseCommand {
     @Override
     public void execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("9l.resurrect")) {
-            sender.sendMessage(lang.msg("no_permission"));  return;
+            sender.sendMessage(lang.msg("no_permission"));
+            return;
         }
         if (args.length != 3) {
-            sender.sendMessage(lang.msg("command_usage"));  return;
+            sender.sendMessage(lang.msg("command_usage"));
+            return;
         }
 
         Player target = Bukkit.getPlayerExact(args[1]);
         if (target == null || !target.isOnline()) {
-            sender.sendMessage(lang.msg("invalid_player")); return;
+            sender.sendMessage(lang.msg("invalid_player"));
+            return;
         }
         if (target.getGameMode() != GameMode.SPECTATOR) {
-            sender.sendMessage(lang.msg("not_in_spectator")); return;
+            sender.sendMessage(lang.msg("not_in_spectator"));
+            return;
         }
 
         int hearts;
-        try { hearts = Integer.parseInt(args[2]); }
-        catch (NumberFormatException e) {
-            sender.sendMessage(lang.msg("invalid_number")); return;
+        try {
+            hearts = Integer.parseInt(args[2]);
+        } catch (NumberFormatException e) {
+            sender.sendMessage(lang.msg("invalid_number"));
+            return;
         }
-        if (hearts < 1 || hearts > HeartService.MAX_HEARTS) {
-            sender.sendMessage(lang.msg("invalid_number")); return;
+
+        int max = service.getMaxHearts();
+        if (hearts < 1 || hearts > max) {
+            sender.sendMessage(lang.msg("invalid_number",
+                    "max", max
+            ));
+            return;
         }
 
         service.setHearts(target.getName(), hearts);
@@ -52,7 +63,6 @@ public final class ResurrectCommand implements BaseCommand {
                 "player", target.getName(),
                 "hearts", hearts
         ));
-
         target.sendMessage(lang.msg("you_have_been_resurrected",
                 "hearts", hearts
         ));

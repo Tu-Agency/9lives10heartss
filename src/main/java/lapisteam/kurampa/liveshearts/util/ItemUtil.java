@@ -1,9 +1,8 @@
 package lapisteam.kurampa.liveshearts.util;
 
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
-import lapisteam.kurampa.liveshearts.service.HeartService;
+import com.destroystokyo.paper.profile.PlayerProfile;
 import lapisteam.kurampa.liveshearts.config.Lang;
+import lapisteam.kurampa.liveshearts.service.HeartService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -12,13 +11,10 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
-
 
 public final class ItemUtil {
 
@@ -48,16 +44,22 @@ public final class ItemUtil {
                                                 HeartService service,
                                                 Lang lang) {
         int current = service.getHearts(player.getName());
-        if (current >= HeartService.MAX_HEARTS) {
-            player.sendMessage(lang.msg("error_hp_player")); return;
+        int max     = service.getMaxHearts();
+
+        if (current >= max) {
+            player.sendMessage(lang.msg("error_hp_player", "max", max));
+            return;
         }
 
-        if (item.getAmount() > 1) item.setAmount(item.getAmount() - 1);
-        else player.getInventory().remove(item);
+        if (item.getAmount() > 1) {
+            item.setAmount(item.getAmount() - 1);
+        } else {
+            player.getInventory().remove(item);
+        }
 
         service.addHearts(player.getName(), 1);
         int after = service.getHearts(player.getName());
-        player.sendMessage(lang.msg("heart_recovered", after));
+        player.sendMessage(lang.msg("heart_recovered", "hearts", after));
     }
 
     public static boolean isUniqueTotem(ItemStack item, JavaPlugin plugin) {
@@ -66,7 +68,7 @@ public final class ItemUtil {
         if (meta == null) return false;
 
         String name = plugin.getConfig().getString("heart-recovery.totem.name", "");
-        int cmd    = plugin.getConfig().getInt   ("heart-recovery.totem.container", 12345);
+        int cmd     = plugin.getConfig().getInt("heart-recovery.totem.container", 12345);
 
         if (meta.hasDisplayName() && meta.getDisplayName().equals(name)) return true;
         return meta.hasCustomModelData() && meta.getCustomModelData() == cmd;
@@ -76,12 +78,16 @@ public final class ItemUtil {
                                    HeartService service,
                                    Lang lang) {
         int current = service.getHearts(player.getName());
-        if (current >= HeartService.MAX_HEARTS) {
-            player.sendMessage(lang.msg("error_hp_player")); return;
+        int max     = service.getMaxHearts();
+
+        if (current >= max) {
+            player.sendMessage(lang.msg("error_hp_player", "max", max));
+            return;
         }
+
         service.addHearts(player.getName(), 1);
         int after = service.getHearts(player.getName());
-        player.sendMessage(lang.msg("heart_recovered_thematic", after));
+        player.sendMessage(lang.msg("heart_recovered_thematic", "hearts", after));
     }
 
     public static ItemStack createHeartHead(Player dead, JavaPlugin plugin) {
@@ -89,38 +95,36 @@ public final class ItemUtil {
         SkullMeta meta = (SkullMeta) head.getItemMeta();
         if (meta == null) return head;
 
-        // 1) Имя и лор из config.yml
         String rawName = plugin.getConfig().getString("head-heart.name", "{player}");
-        meta.setDisplayName(ColorUtil.translateHex(rawName.replace("{player}", dead.getName())));
-
+        meta.setDisplayName(
+                ColorUtil.translateHex(rawName.replace("{player}", dead.getName()))
+        );
         List<String> rawLore = plugin.getConfig().getStringList("head-heart.lore");
         meta.setLore(rawLore.stream()
                 .map(line -> ColorUtil.translateHex(line.replace("{player}", dead.getName())))
                 .toList()
         );
 
-        meta.setCustomModelData(plugin.getConfig().getInt("head-heart.container", 12345));
+        meta.setCustomModelData(
+                plugin.getConfig().getInt("head-heart.container", 12345)
+        );
 
-        // 2) Base64-текстура
+        // Texture via PaperServer#createProfile (reflection)
         String value = plugin.getConfig().getString("head-heart.value", "").trim();
         if (!value.isEmpty()) {
             try {
-                // создаём GameProfile с нужной текстурой
-                GameProfile gp = new GameProfile(UUID.randomUUID(), dead.getName());
-                gp.getProperties().put("textures", new Property("textures", value));
+                Object server = Bukkit.getServer();
+                Method createProfile = server.getClass().getMethod("createProfile", UUID.class);
+                Object profileObj = createProfile.invoke(server, UUID.randomUUID());
 
-                // получаем класс ResolvableProfile (Paper/NMS)
-                Class<?> rpClass = Class.forName("net.minecraft.world.item.component.ResolvableProfile");
-                // метод of(GameProfile)
-                Method of = rpClass.getMethod("of", GameProfile.class);
-                Object resolvable = of.invoke(null, gp);
+                @SuppressWarnings("unchecked")
+                PlayerProfile profile = (PlayerProfile) profileObj;
+                profile.getProperties().add(
+                        new com.destroystokyo.paper.profile.ProfileProperty("textures", value)
+                );
+                meta.setPlayerProfile(profile);
 
-                // впихиваем в приватное поле profile у CraftMetaSkull
-                Field profileField = meta.getClass().getDeclaredField("profile");
-                profileField.setAccessible(true);
-                profileField.set(meta, resolvable);
-
-            } catch (Throwable ex) {
+            } catch (ReflectiveOperationException ex) {
                 plugin.getLogger().warning("Не удалось установить текстуру головы: " + ex.getMessage());
             }
         }
@@ -129,18 +133,16 @@ public final class ItemUtil {
         return head;
     }
 
-
     public static ItemStack createTotem(JavaPlugin plugin) {
         ItemStack totem = new ItemStack(Material.TOTEM_OF_UNDYING);
         ItemMeta meta = totem.getItemMeta();
         if (meta != null) {
             String name = plugin.getConfig().getString("heart-recovery.totem.name", "");
-            int cmd     = plugin.getConfig().getInt   ("heart-recovery.totem.container", 12345);
+            int cmd     = plugin.getConfig().getInt("heart-recovery.totem.container", 12345);
             meta.setDisplayName(name);
 
             List<String> lore = new ArrayList<>();
-            plugin.getConfig()
-                    .getStringList("heart-recovery.totem.lore")
+            plugin.getConfig().getStringList("heart-recovery.totem.lore")
                     .forEach(line -> lore.add(line));
             meta.setLore(lore);
 
