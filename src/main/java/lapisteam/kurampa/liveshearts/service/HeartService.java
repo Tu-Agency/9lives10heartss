@@ -1,4 +1,3 @@
-// HeartService.java
 package lapisteam.kurampa.liveshearts.service;
 
 import lapisteam.kurampa.liveshearts.config.ConfigKeys;
@@ -15,12 +14,10 @@ public class HeartService {
 
     private final PlayerRepository repository;
     private final JavaPlugin plugin;
-    private final Lang lang;
 
     public HeartService(PlayerRepository repository, JavaPlugin plugin) {
         this.repository = repository;
         this.plugin     = plugin;
-        this.lang       = new Lang(plugin);
     }
 
     private int getDefaultHearts() {
@@ -51,6 +48,7 @@ public class HeartService {
     }
 
     public void handleDeath(Player player) {
+        var lang = Lang.get();
         UUID id = player.getUniqueId();
         int current = getHearts(id);
 
@@ -58,7 +56,9 @@ public class HeartService {
         boolean immortal = mode.equalsIgnoreCase("immortal");
 
         if (immortal) {
-            if (current > 1) setHearts(id, current - 1);
+            if (current > 1) {
+                setHearts(id, current - 1);
+            }
             return;
         }
 

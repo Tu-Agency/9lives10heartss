@@ -21,24 +21,20 @@ public class PlayerListener implements Listener {
 
     private final HeartService service;
     private final JavaPlugin plugin;
-    private final Lang lang;
 
     public PlayerListener(HeartService service, JavaPlugin plugin) {
         this.service = service;
         this.plugin  = plugin;
-        this.lang    = new Lang(plugin);
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
-        Player p = e.getPlayer();
-        applyHearts(p);
+        applyHearts(e.getPlayer());
     }
 
     @EventHandler
     public void onRespawn(PlayerRespawnEvent e) {
-        Player p = e.getPlayer();
-        applyHearts(p);
+        applyHearts(e.getPlayer());
     }
 
     private void applyHearts(Player p) {
@@ -54,7 +50,9 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onEat(PlayerItemConsumeEvent e) {
+        var lang = Lang.get();
         if (!plugin.getConfig().getBoolean(ConfigKeys.RECOVERY_EAT_ENABLED, true)) return;
+
         Material food = Material.matchMaterial(
                 plugin.getConfig().getString(ConfigKeys.RECOVERY_EAT_FOOD, "ENCHANTED_GOLDEN_APPLE")
         );
@@ -72,6 +70,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onResurrect(EntityResurrectEvent e) {
+        var lang = Lang.get();
         if (!(e.getEntity() instanceof Player player)) return;
         if (!plugin.getConfig().getBoolean(ConfigKeys.TOTEM_ENABLED, true)) return;
 
@@ -83,18 +82,19 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
+        var lang = Lang.get();
         Player dead   = e.getEntity();
         Player killer = dead.getKiller();
         service.handleDeath(dead);
 
         if (!plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART_ENABLED, true)) return;
 
-        boolean onlyPvP = plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART_ONLY_PVP, true);
-        if (onlyPvP && killer == null) return;
+        boolean onlyPvP      = plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART_ONLY_PVP, true);
+        double dropChance    = plugin.getConfig().getDouble(ConfigKeys.HEAD_HEART_DROP_CHANCE, 1.0);
+        boolean cursedEn     = plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART_CURSED_ENABLED, false);
+        double cursedChance  = plugin.getConfig().getDouble(ConfigKeys.HEAD_HEART_CURSED_CHANCE, 0.0);
 
-        double dropChance = plugin.getConfig().getDouble(ConfigKeys.HEAD_HEART_DROP_CHANCE, 1.0);
-        boolean cursedEn = plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART_CURSED_ENABLED, false);
-        double cursedChance = plugin.getConfig().getDouble(ConfigKeys.HEAD_HEART_CURSED_CHANCE, 0.0);
+        if (onlyPvP && killer == null) return;
 
         double roll = Math.random();
         if (cursedEn && roll < cursedChance) {
@@ -106,6 +106,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
+        var lang = Lang.get();
         if (e.getHand() != EquipmentSlot.HAND) return;
         if (e.getAction() != Action.RIGHT_CLICK_AIR
                 && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
