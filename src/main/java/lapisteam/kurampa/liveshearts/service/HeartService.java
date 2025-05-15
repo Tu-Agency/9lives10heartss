@@ -8,6 +8,7 @@ import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.List;
 import java.util.UUID;
 
 public class HeartService {
@@ -51,9 +52,8 @@ public class HeartService {
         var lang = Lang.get();
         UUID id = player.getUniqueId();
         int current = getHearts(id);
-
-        String mode = plugin.getConfig().getString(ConfigKeys.GAMEMODE, "hard");
-        boolean immortal = mode.equalsIgnoreCase("immortal");
+        boolean immortal = plugin.getConfig().getString("gamemode", "hard")
+                .equalsIgnoreCase("immortal");
 
         if (immortal) {
             if (current > 1) {
@@ -67,8 +67,20 @@ public class HeartService {
             player.sendMessage(lang.msg("hearts_decreased", "hearts", current - 1));
         } else {
             setHearts(id, 0);
-            player.setGameMode(GameMode.SPECTATOR);
-            player.sendMessage(lang.msg("spectator_mode"));
+
+            List<String> cmds = plugin.getConfig()
+                    .getStringList(ConfigKeys.ON_ZERO_COMMANDS);
+
+            if (cmds.isEmpty()) {
+                player.setGameMode(GameMode.SPECTATOR);
+                player.sendMessage(lang.msg("spectator_mode"));
+            } else {
+                String name = player.getName();
+                for (String raw : cmds) {
+                    String cmd = raw.replace("{player}", name);
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                }
+            }
         }
     }
 
